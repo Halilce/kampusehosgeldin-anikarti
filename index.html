@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kampüs Anı Kartı Oluşturucu · Çınarcık MYO</title>
+<style>
+  :root{
+    --navy:#0d1b3e; --blue:#1b5fc4; --cyan:#20c9d6; --teal:#0fb5a6;
+    --ink:#0f1a33; --muted:#8fa0c4; --line:rgba(255,255,255,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:#eaf0fb;min-height:100vh;padding:24px;
+    background:
+      radial-gradient(1100px 700px at 12% -10%,#16307a 0%,transparent 55%),
+      radial-gradient(900px 600px at 112% 18%,#103a6b 0%,transparent 52%),
+      linear-gradient(160deg,#0a1330 0%,#0d1c46 46%,#0a1330 100%);
+  }
+  .app{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:380px 1fr;gap:28px;align-items:start}
+
+  .panel{
+    background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:20px;
+    padding:24px;backdrop-filter:blur(8px);position:sticky;top:24px;max-height:calc(100vh - 48px);overflow:auto;
+  }
+  .panel h1{font-size:19px;color:#fff;margin-bottom:6px;line-height:1.25}
+  .panel .lead{font-size:12.5px;color:#aeb9d4;line-height:1.5;margin-bottom:20px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:8px;color:#cdd7ee}
+  .field input[type="text"]{
+    width:100%;padding:11px 13px;border-radius:11px;border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.08);color:#fff;font-size:15px;outline:none;transition:.15s;
+  }
+  .field input[type="text"]:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(32,201,214,.25)}
+  .field input[type="text"]:disabled{opacity:.5;cursor:not-allowed}
+  .file-drop{
+    display:flex;align-items:center;gap:11px;padding:13px;border-radius:11px;cursor:pointer;
+    border:1.5px dashed rgba(255,255,255,.28);background:rgba(255,255,255,.05);transition:.15s;
+  }
+  .file-drop:hover{border-color:var(--cyan);background:rgba(32,201,214,.08)}
+  .file-drop.disabled{opacity:.5;pointer-events:none}
+  .file-drop span{font-size:12.5px;color:#cdd7ee}
+  .file-drop input{display:none}
+  .file-name{font-size:11.5px;color:#8fa0c4;margin-top:6px;word-break:break-all}
+  .file-drop.done{border-style:solid;border-color:var(--teal);background:rgba(15,181,166,.1)}
+
+  /* Fotoğraf konumlandırma paneli */
+  .pos-panel{
+    margin:4px 0 18px;padding:16px;border-radius:14px;
+    background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.08);
+  }
+  .pos-panel.hidden{display:none}
+  .pos-panel h2{font-size:13px;color:#dbe4f6;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .pos-panel h2 svg{width:16px;height:16px;color:var(--cyan)}
+  .slider-row{margin-bottom:14px}
+  .slider-row .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .slider-row .top label{font-size:12px;color:#c5d0e8}
+  .slider-row .top .val{font-size:12px;color:#20c9d6;font-variant-numeric:tabular-nums;font-weight:600}
+  input[type="range"]{
+    -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;
+    background:rgba(255,255,255,.15);outline:none;cursor:pointer;
+  }
+  input[type="range"]:focus-visible{box-shadow:0 0 0 3px rgba(32,201,214,.3)}
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:18px;height:18px;border-radius:50%;
+    background:linear-gradient(135deg,var(--cyan),var(--blue));cursor:pointer;border:2px solid #0a1330;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;border:2px solid #0a1330;
+    background:linear-gradient(135deg,var(--cyan),var(--blue));cursor:pointer;
+  }
+  .pos-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+  .pos-btns .btn{padding:10px;font-size:12.5px}
+  .btn-fit{background:linear-gradient(135deg,#0fb5a6,#20c9d6);color:#04222a}
+  .btn-posreset{background:rgba(255,255,255,.1);color:#dbe4f6}
+  .btn-posreset:hover{background:rgba(255,255,255,.18)}
+
+  .btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  .btn{appearance:none;border:none;cursor:pointer;font-size:13.5px;font-weight:600;padding:12px;border-radius:11px;transition:.15s;color:#fff}
+  .btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn-primary{grid-column:1/-1;background:linear-gradient(135deg,var(--blue),var(--teal))}
+  .btn-primary:hover:not(:disabled){filter:brightness(1.08)}
+  .btn-download{background:linear-gradient(135deg,#2b6fe0,#6a4bff)}
+  .btn-share{background:linear-gradient(135deg,#0fb5a6,#20c9d6);color:#04222a}
+  .btn-reset{grid-column:1/-1;background:rgba(255,255,255,.1);color:#dbe4f6}
+  .btn-reset:hover:not(:disabled){background:rgba(255,255,255,.18)}
+
+  .hint{
+    margin-top:14px;font-size:11.5px;line-height:1.5;color:#96a3c2;padding:11px;border-radius:10px;
+    background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.06);
+  }
+
+  .stage{display:flex;justify-content:center;padding:6px}
+  .canvas-shell{width:100%;max-width:560px;position:relative}
+  canvas#preview{
+    width:100%;height:auto;display:block;border-radius:18px;
+    box-shadow:0 30px 80px rgba(0,0,0,.45);background:#0a1330;aspect-ratio:1080/1350;
+  }
+  .state{
+    width:100%;max-width:560px;aspect-ratio:1080/1350;border-radius:18px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    text-align:center;padding:34px;color:#b7c4de;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  }
+  .state b{color:#fff;font-size:18px}
+  .state p{font-size:13px;line-height:1.55;max-width:340px;color:#a7b4d2}
+  .state.error{border-color:rgba(255,120,138,.4);background:rgba(90,18,32,.25)}
+  .state.error b{color:#ffbcc5}
+  .spinner{
+    width:52px;height:52px;border-radius:50%;
+    border:5px solid rgba(255,255,255,.15);border-top-color:var(--cyan);animation:spin .9s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .state .err-icon{width:56px;height:56px;color:#ff8a9a}
+  .btn-retry{
+    margin-top:4px;background:linear-gradient(135deg,#2b6fe0,#6a4bff);color:#fff;
+    border:none;border-radius:11px;padding:11px 20px;font-size:13.5px;font-weight:600;cursor:pointer;
+  }
+  .btn-retry:hover{filter:brightness(1.08)}
+
+  /* Fotoğraf işleniyor katmanı (canvas üstünde) */
+  .photo-loading{
+    position:absolute;inset:0;border-radius:18px;display:none;
+    align-items:center;justify-content:center;flex-direction:column;gap:12px;
+    background:rgba(8,16,40,.55);backdrop-filter:blur(2px);color:#eaf0fb;font-size:13px;
+  }
+  .photo-loading.show{display:flex}
+  .photo-loading .spinner{width:40px;height:40px;border-width:4px}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:#0f2350;color:#fff;padding:13px 20px;border-radius:12px;font-size:13.5px;
+    box-shadow:0 20px 60px rgba(9,20,50,.5);border:1px solid rgba(255,255,255,.14);
+    opacity:0;pointer-events:none;transition:.3s;z-index:99;max-width:90vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{background:#5a1220;border-color:#ff7a8a}
+  .toast.warn{background:#5a4410;border-color:#ffd36a;color:#fff6df}
+
+  @media (max-width:900px){
+    .app{grid-template-columns:1fr}
+    .panel{position:static;order:1;max-height:none}
+    .stage{order:2}
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <h1>Kampüs Anı Kartı</h1>
+      <p class="lead">Fotoğraf ve ad ekleyin, fotoğrafı alana göre konumlandırın. Önizleme ve indirilen PNG birebir aynıdır.</p>
+
+      <div class="field">
+        <label for="photo">Profil Fotoğrafı Yükle</label>
+        <label class="file-drop disabled" for="photo" id="photoDrop">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20c9d6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <span>JPG, PNG veya WEBP seç (maks. 10 MB)</span>
+          <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" disabled />
+        </label>
+        <div class="file-name" id="photoName"></div>
+      </div>
+
+      <!-- Fotoğraf konumlandırma -->
+      <div class="pos-panel hidden" id="posPanel">
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></svg>
+          Fotoğrafı Konumlandır
+        </h2>
+        <div class="slider-row">
+          <div class="top"><label for="posX">Sağa / Sola Kaydır</label><span class="val" id="posXVal">50</span></div>
+          <input type="range" id="posX" min="0" max="100" step="1" value="50" />
+        </div>
+        <div class="slider-row">
+          <div class="top"><label for="posY">Yukarı / Aşağı Kaydır</label><span class="val" id="posYVal">35</span></div>
+          <input type="range" id="posY" min="0" max="100" step="1" value="35" />
+        </div>
+        <div class="slider-row">
+          <div class="top"><label for="zoom">Yakınlaştır / Uzaklaştır</label><span class="val" id="zoomVal">1.00</span></div>
+          <input type="range" id="zoom" min="1" max="2" step="0.01" value="1" />
+        </div>
+        <div class="pos-btns">
+          <button class="btn btn-fit" id="btnFit">Fotoğrafı Sığdır</button>
+          <button class="btn btn-posreset" id="btnPosReset">Konumu Sıfırla</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fullname">Ad Soyad</label>
+        <input type="text" id="fullname" value="Ad Soyad" maxlength="42" autocomplete="off" disabled />
+      </div>
+
+      <div class="btns">
+        <button class="btn btn-primary" id="btnUpdate" disabled>Kartı Güncelle</button>
+        <button class="btn btn-download" id="btnDownload" disabled>PNG İndir</button>
+        <button class="btn btn-share" id="btnShare" disabled>Paylaş</button>
+        <button class="btn btn-reset" id="btnReset" disabled>Sıfırla</button>
+      </div>
+
+      <p class="hint">Fotoğraf alanı, oran korunarak (cover) tamamen doldurulur; şablonun eski portresi opak zeminle kapatılır. Fotoğraf yoksa nötr bir avatar gösterilir.</p>
+    </aside>
+
+    <main class="stage">
+      <div class="canvas-shell">
+        <div class="state" id="loadingState">
+          <div class="spinner" role="status" aria-label="Yükleniyor"></div>
+          <b>Şablon yükleniyor...</b>
+          <p>Lütfen bekleyiniz.</p>
+        </div>
+        <div class="state error" id="errorState" style="display:none">
+          <svg class="err-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <b>Şablon yüklenemedi.</b>
+          <p>Lütfen “sablon/sablon.png” dosyasının index.html ile aynı proje klasöründe bulunduğunu kontrol edin.</p>
+          <button class="btn-retry" id="btnRetry">Tekrar Dene</button>
+        </div>
+        <canvas id="preview" width="1080" height="1350" style="display:none"></canvas>
+        <div class="photo-loading" id="photoLoading">
+          <div class="spinner"></div>
+          <span>Fotoğraf hazırlanıyor...</span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  (function(){
+    "use strict";
+    var W=1080,H=1350;
+    var TEMPLATE_SRC="sablon/sablon.png";
+    var MAX_BYTES=10*1024*1024;
+    var ACCEPTED=["image/jpeg","image/png","image/webp"];
+
+    /* Fotoğraf penceresi — 1080x1350 üretim koordinatları (ayarlanabilir) */
+    var PHOTO_AREA={ x:414, y:537, width:247, height:297, radius:18 };
+    /* Ad soyad satırı (1080x1350 koordinat) */
+    var NAME={ cx:540, cy:841, w:384 };
+
+    /* Fotoğraf konumlandırma durumu */
+    var DEF_POS={x:50,y:35,zoom:1};
+    var pos={x:DEF_POS.x,y:DEF_POS.y,zoom:DEF_POS.zoom};
+
+    var canvas=document.getElementById("preview");
+    var ctx=canvas.getContext("2d");
+    var loadingState=document.getElementById("loadingState");
+    var errorState=document.getElementById("errorState");
+    var photoLoading=document.getElementById("photoLoading");
+
+    var photoInput=document.getElementById("photo");
+    var photoDrop=document.getElementById("photoDrop");
+    var photoName=document.getElementById("photoName");
+    var nameInput=document.getElementById("fullname");
+    var toast=document.getElementById("toast");
+
+    var posPanel=document.getElementById("posPanel");
+    var posX=document.getElementById("posX"), posY=document.getElementById("posY"), zoom=document.getElementById("zoom");
+    var posXVal=document.getElementById("posXVal"), posYVal=document.getElementById("posYVal"), zoomVal=document.getElementById("zoomVal");
+
+    var btnUpdate=document.getElementById("btnUpdate");
+    var btnDownload=document.getElementById("btnDownload");
+    var btnShare=document.getElementById("btnShare");
+    var btnReset=document.getElementById("btnReset");
+    var btnRetry=document.getElementById("btnRetry");
+    var btnFit=document.getElementById("btnFit");
+    var btnPosReset=document.getElementById("btnPosReset");
+
+    var templateImg=null;
+    var photoImg=null;
+    var DEFAULT_NAME="Ad Soyad";
+
+    /* --- Toast --- */
+    var tTimer=null;
+    function showToast(msg,kind){
+      toast.textContent=msg;
+      toast.className="toast show"+(kind?(" "+kind):"");
+      clearTimeout(tTimer);
+      tTimer=setTimeout(function(){toast.className="toast"+(kind?(" "+kind):"");},3200);
+    }
+
+    /* --- roundRect (kendi yazımımız) --- */
+    function roundRect(context,x,y,w,h,r){
+      r=Math.min(r,w/2,h/2);
+      context.beginPath();
+      context.moveTo(x+r,y);
+      context.arcTo(x+w,y,x+w,y+h,r);
+      context.arcTo(x+w,y+h,x,y+h,r);
+      context.arcTo(x,y+h,x,y,r);
+      context.arcTo(x,y,x+w,y,r);
+      context.closePath();
+    }
+
+    /* --- Şablon için oran koruyan cover --- */
+    function drawTemplateCover(context,image,x,y,tw,th){
+      var sw=image.naturalWidth||image.width, sh=image.naturalHeight||image.height;
+      var scale=Math.max(tw/sw, th/sh);
+      var dw=sw*scale, dh=sh*scale;
+      var ox=x+(tw-dw)/2, oy=y+(th-dh)/2;
+      context.drawImage(image,ox,oy,dw,dh);
+    }
+
+    /* --- Fotoğraf için konumlanabilir cover ---
+       positionX/Y: 0-100 odak, zoom: 1-2 */
+    function drawImageCover(context,image,area,positionX,positionY,zoomV){
+      positionX=(typeof positionX==="number")?positionX:50;
+      positionY=(typeof positionY==="number")?positionY:35;
+      zoomV=(typeof zoomV==="number")?zoomV:1;
+      var sw=image.naturalWidth||image.width, sh=image.naturalHeight||image.height;
+      var baseScale=Math.max(area.width/sw, area.height/sh);
+      var scale=baseScale*zoomV;
+      var dw=sw*scale, dh=sh*scale;
+      // konum: fazlalık kadar kaydır (0 => sol/üst hizalı, 100 => sağ/alt hizalı)
+      var extraX=dw-area.width, extraY=dh-area.height;
+      var ox=area.x-extraX*(positionX/100);
+      var oy=area.y-extraY*(positionY/100);
+      context.drawImage(image,ox,oy,dw,dh);
+    }
+
+    /* --- Avatar (fotoğraf yoksa) --- */
+    function drawAvatar(context,area){
+      var cx=area.x+area.width/2;
+      var headR=area.width*0.20;
+      var headCy=area.y+area.height*0.40;
+      context.save();
+      context.fillStyle="#c3ccdd";
+      // baş
+      context.beginPath();
+      context.arc(cx,headCy,headR,0,Math.PI*2);
+      context.fill();
+      // gövde
+      var bw=area.width*0.56, bh=area.height*0.34;
+      var bx=cx-bw/2, by=headCy+headR*0.7;
+      roundRect(context,bx,by,bw,bh,bw*0.5);
+      context.fill();
+      context.restore();
+    }
+
+    /* --- İsim sığdırma --- */
+    function fitName(text,maxW){
+      var size=38;
+      ctx.textAlign="center";ctx.textBaseline="middle";
+      while(size>26){
+        ctx.font="600 "+size+"px -apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+        if(ctx.measureText(text).width<=maxW) return {size:size,lines:[text]};
+        size-=2;
+      }
+      var words=text.split(/\s+/);
+      if(words.length>1){
+        for(var s=34;s>=22;s-=2){
+          ctx.font="600 "+s+"px -apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+          for(var i=1;i<words.length;i++){
+            var l1=words.slice(0,i).join(" "), l2=words.slice(i).join(" ");
+            if(ctx.measureText(l1).width<=maxW && ctx.measureText(l2).width<=maxW) return {size:s,lines:[l1,l2]};
+          }
+        }
+      }
+      ctx.font="600 24px -apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+      var t=text;
+      while(t.length>1 && ctx.measureText(t+"…").width>maxW){t=t.slice(0,-1);}
+      return {size:24,lines:[t+"…"]};
+    }
+
+    /* --- Merkezi çizim (önizleme + PNG aynı) --- */
+    function renderCard(){
+      if(!templateImg) return;
+      ctx.clearRect(0,0,W,H);
+
+      // 1) sabit şablon
+      ctx.save();
+      ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();
+      drawTemplateCover(ctx,templateImg,0,0,W,H);
+      ctx.restore();
+
+      var a=PHOTO_AREA;
+      // 2) opak zemin — eski portreyi kapat (köşelerden sızmayı önlemek için hafif taşır)
+      var bleed=3;
+      ctx.save();
+      roundRect(ctx,a.x-bleed,a.y-bleed,a.width+bleed*2,a.height+bleed*2,a.radius+bleed);
+      ctx.fillStyle="#f5f7fb";
+      ctx.fill();
+      ctx.restore();
+
+      // 3-4) clip + fotoğraf ya da avatar
+      ctx.save();
+      roundRect(ctx,a.x,a.y,a.width,a.height,a.radius);
+      ctx.clip();
+      if(photoImg){
+        drawImageCover(ctx,photoImg,a,pos.x,pos.y,pos.zoom);
+      }else{
+        drawAvatar(ctx,a);
+      }
+      ctx.restore();
+
+      // 5) ince iç çerçeve
+      ctx.save();
+      roundRect(ctx,a.x+0.75,a.y+0.75,a.width-1.5,a.height-1.5,a.radius);
+      ctx.lineWidth=1.5;
+      ctx.strokeStyle="rgba(27,95,196,0.28)";
+      ctx.stroke();
+      ctx.restore();
+
+      // 7) ad soyad
+      var raw=nameInput.value.trim();
+      if(raw && raw!==DEFAULT_NAME){
+        var bandH=60;
+        ctx.save();
+        ctx.fillStyle="#eef2f9";
+        roundRect(ctx,NAME.cx-NAME.w/2-20,NAME.cy-bandH/2,NAME.w+40,bandH,10);
+        ctx.fill();
+        ctx.restore();
+
+        var fit=fitName(raw,NAME.w);
+        ctx.fillStyle="#14203f";
+        ctx.textAlign="center";ctx.textBaseline="middle";
+        ctx.font="600 "+fit.size+"px -apple-system,'Segoe UI',Roboto,Arial,sans-serif";
+        if(fit.lines.length===1){
+          ctx.fillText(fit.lines[0],NAME.cx,NAME.cy);
+        }else{
+          var lh=fit.size*1.12;
+          ctx.fillText(fit.lines[0],NAME.cx,NAME.cy-lh/2);
+          ctx.fillText(fit.lines[1],NAME.cx,NAME.cy+lh/2);
+        }
+      }
+    }
+
+    /* --- Araçlar --- */
+    function setToolsEnabled(on){
+      photoInput.disabled=!on;nameInput.disabled=!on;
+      btnUpdate.disabled=!on;btnDownload.disabled=!on;btnShare.disabled=!on;btnReset.disabled=!on;
+      photoDrop.classList.toggle("disabled",!on);
+    }
+    function showLoading(){loadingState.style.display="flex";errorState.style.display="none";canvas.style.display="none";setToolsEnabled(false);}
+    function showError(){loadingState.style.display="none";errorState.style.display="flex";canvas.style.display="none";setToolsEnabled(false);}
+    function showCanvas(){loadingState.style.display="none";errorState.style.display="none";canvas.style.display="block";setToolsEnabled(true);}
+
+    /* --- Şablon yükle --- */
+    function loadTemplate(){
+      showLoading();
+      var img=new Image();
+      img.onload=function(){
+        if(!img.naturalWidth){showError();return;}
+        templateImg=img;renderCard();showCanvas();
+        showToast("Şablon hazır. Kartınızı kişiselleştirebilirsiniz.");
+      };
+      img.onerror=function(){showError();};
+      img.src=TEMPLATE_SRC+"?v="+Date.now();
+    }
+    btnRetry.addEventListener("click",loadTemplate);
+
+    /* --- Konum kontrolleri --- */
+    function syncPosLabels(){
+      posXVal.textContent=pos.x;
+      posYVal.textContent=pos.y;
+      zoomVal.textContent=pos.zoom.toFixed(2);
+    }
+    function syncPosInputs(){
+      posX.value=pos.x;posY.value=pos.y;zoom.value=pos.zoom;syncPosLabels();
+    }
+    posX.addEventListener("input",function(){pos.x=parseInt(this.value,10);posXVal.textContent=pos.x;renderCard();});
+    posY.addEventListener("input",function(){pos.y=parseInt(this.value,10);posYVal.textContent=pos.y;renderCard();});
+    zoom.addEventListener("input",function(){pos.zoom=parseFloat(this.value);zoomVal.textContent=pos.zoom.toFixed(2);renderCard();});
+    btnFit.addEventListener("click",function(){pos.x=50;pos.y=50;pos.zoom=1;syncPosInputs();renderCard();showToast("Fotoğraf alana sığdırıldı.");});
+    btnPosReset.addEventListener("click",function(){pos.x=DEF_POS.x;pos.y=DEF_POS.y;pos.zoom=DEF_POS.zoom;syncPosInputs();renderCard();showToast("Konum sıfırlandı.");});
+
+    /* --- Fotoğraf doğrulama + yükleme --- */
+    function handlePhotoFile(file){
+      if(!file) return;
+      if(ACCEPTED.indexOf(file.type)===-1){
+        showToast("Geçersiz dosya türü. Yalnızca JPG, PNG veya WEBP kabul edilir.","err");return;
+      }
+      if(file.size>MAX_BYTES){
+        showToast("Dosya çok büyük. En fazla 10 MB olabilir.","err");return;
+      }
+      photoLoading.classList.add("show");
+      var r=new FileReader();
+      r.onload=function(ev){
+        var img=new Image();
+        img.onload=function(){
+          photoLoading.classList.remove("show");
+          if(!img.naturalWidth||!img.naturalHeight){
+            showToast("Görsel çözümlenemedi. Farklı bir dosya deneyin.","err");return;
+          }
+          if(img.naturalWidth<300||img.naturalHeight<300){
+            showToast("Fotoğraf 300×300 pikselden küçük; kalite düşük olabilir.","warn");
+          }
+          photoImg=img;
+          photoName.textContent=file.name;
+          photoDrop.classList.add("done");
+          // yeni fotoğrafta konumu varsayılana al
+          pos.x=DEF_POS.x;pos.y=DEF_POS.y;pos.zoom=DEF_POS.zoom;
+          syncPosInputs();
+          posPanel.classList.remove("hidden");
+          renderCard();
+        };
+        img.onerror=function(){
+          photoLoading.classList.remove("show");
+          showToast("Görsel yüklenemedi. Önceki fotoğraf korunuyor.","err");
+        };
+        img.src=ev.target.result;
+      };
+      r.onerror=function(){
+        photoLoading.classList.remove("show");
+        showToast("Dosya okunamadı.","err");
+      };
+      r.readAsDataURL(file);
+    }
+    photoInput.addEventListener("change",function(e){
+      var f=e.target.files&&e.target.files[0];
+      handlePhotoFile(f);
+      this.value="";
+    });
+
+    nameInput.addEventListener("input",renderCard);
+    btnUpdate.addEventListener("click",function(){renderCard();showToast("Kart güncellendi ✓");});
+
+    btnReset.addEventListener("click",function(){
+      photoImg=null;photoName.textContent="";photoDrop.classList.remove("done");
+      posPanel.classList.add("hidden");
+      pos.x=DEF_POS.x;pos.y=DEF_POS.y;pos.zoom=DEF_POS.zoom;syncPosInputs();
+      nameInput.value=DEFAULT_NAME;
+      renderCard();
+      showToast("Sıfırlandı.");
+    });
+
+    /* --- Canvas -> Blob --- */
+    function toBlob(){
+      return new Promise(function(res,rej){
+        canvas.toBlob(function(b){b?res(b):rej(new Error("PNG oluşturulamadı."));},"image/png",1);
+      });
+    }
+    btnDownload.addEventListener("click",function(){
+      if(!templateImg){showToast("Şablon henüz hazır değil.","err");return;}
+      renderCard();
+      toBlob().then(function(blob){
+        var url=URL.createObjectURL(blob);
+        var a=document.createElement("a");
+        a.href=url;a.download="cinarcik-ani-karti.png";
+        document.body.appendChild(a);a.click();a.remove();
+        setTimeout(function(){URL.revokeObjectURL(url);},1500);
+        showToast("PNG indirildi ✓ (1080×1350)");
+      }).catch(function(err){showToast(err.message||"İndirme hatası.","err");});
+    });
+    btnShare.addEventListener("click",function(){
+      if(!templateImg){showToast("Şablon henüz hazır değil.","err");return;}
+      renderCard();
+      toBlob().then(function(blob){
+        var file=new File([blob],"cinarcik-ani-karti.png",{type:"image/png"});
+        if(navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+          return navigator.share({files:[file],title:"Kampüs Anı Kartı",text:"#KampüsAnıları #ÇınarcıkAnıKartı"})
+            .then(function(){showToast("Paylaşıldı ✓");});
+        }else{
+          showToast("Tarayıcınız doğrudan paylaşımı desteklemiyor. Görseli indirerek paylaşabilirsiniz.","err");
+        }
+      }).catch(function(err){
+        if(err&&err.name==="AbortError")return;
+        showToast(err.message||"Paylaşım başarısız oldu.","err");
+      });
+    });
+
+    /* Başlangıç */
+    syncPosLabels();
+    loadTemplate();
+  })();
+  </script>
+</body>
+</html>
